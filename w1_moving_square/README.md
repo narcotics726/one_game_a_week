@@ -41,3 +41,48 @@ setInterval(() => {
     drawBox(boxX, boxY);
 }, 1000/60);
 ```
+## 3. Do some refactoring
+
+```js
+const box = {
+    x: 0,
+    y: 0,
+    w: 50,
+    h: 50,
+    update: function () { ... },
+    render: function () { ... }
+};
+
+const loop = function () {
+    requestAnimationFrame(loop);
+    GAME.stage.clearRect(0, 0, GAME.stage.width, GAME.stage.height);
+    box.update();
+    box.render();
+};
+```
+
+## 4. Control the box moving
+
+```js
+document.onkeydown = function (e) {
+    if (e.code === 'ArrowDown') {
+        GAME.keydown.ArrowDown = true;
+    }
+};
+
+document.onkeyup = function (e) {
+    if (e.code === 'ArrowDown') {
+        GAME.keydown.ArrowDown = false;
+    }
+};
+
+const box = {
+    ...,
+    update: function () {
+        if (GAME.keydown.ArrowDown) {
+            this.y += this.velocity;
+        }
+        ...
+    }
+}
+```
