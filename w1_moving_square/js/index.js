@@ -1,4 +1,4 @@
-(function () {
+(function (SAT) {
     const GAME = {};
 
     const init = function () {
@@ -11,14 +11,6 @@
         GAME.stage.height = stageDOM.height;
 
         GAME.keyDown = {};
-    };
-
-    const drawBox = function (x, y) {
-        GAME.stage.beginPath();
-        GAME.stage.rect(x, y, 50, 50);
-        GAME.stage.fillStyle = "#00bcd4";
-        GAME.stage.fill();
-        GAME.stage.closePath();
     };
 
     document.onreadystatechange = function (e) {
@@ -35,24 +27,18 @@
                 if (GAME.keyDown[e.code]) {
                     GAME.keyDown[e.code] = false;
                 }
-            }
+            };
 
-            const box = {
+            const paddle = {
                 x: 0,
                 y: 0,
                 w: 50,
                 h: 50,
                 velocity: 2,
                 update: function () {
-                    console.log(GAME.keyDown);
                     const oldX = this.x;
                     const oldY = this.y;
 
-                    //here is a time-consuming process
-                    // const tStart = window.performance.now();
-                    // while(window.performance.now() - tStart < 200) {
-                    //     ;
-                    // }
                     if (GAME.keyDown.ArrowLeft) {
                         this.x -= this.velocity;
                     }
@@ -68,7 +54,7 @@
                     if (GAME.keyDown.ArrowUp) {
                         this.y -= this.velocity;
                     }
-                    
+
                     if (this.x >= GAME.stage.width - this.w || this.x <= 0) {
                         this.x = oldX;
                     }
@@ -86,19 +72,63 @@
                 }
             };
 
-            const mainLoop = function () {
-                requestAnimationFrame(mainLoop);
+            const ball = {
+                x: 100,
+                y: 100,
+                r: 10,
+                velocity: {
+                    x: 1,
+                    y: 1,
+                },
+                update: function () {
+                    const oldX = this.x;
+                    const oldY = this.y;
+                    this.x += this.velocity.x;
+                    this.y += this.velocity.y;
+                    if (this.x >= GAME.stage.width - this.r || this.x <= this.r) {
+                        this.x = oldX;
+                        this.velocity.x *= -1;
+                    }
 
-                GAME.stage.clearRect(0, 0, GAME.stage.width, GAME.stage.height);
-                box.update();
-                box.render();
+                    if (this.y >= GAME.stage.height - this.r || this.y <= this.r) {
+                        this.y = oldY;
+                        this.velocity.y *= -1;
+                    }
+
+                    const satCircle = new SAT.Circle(new SAT.Vector(this.x, this.y), this.r);
+                    const satBox = new SAT.Box(new SAT.Vector(paddle.x, paddle.y), paddle.w, paddle.h).toPolygon();
+                    const satRes = new SAT.Response();
+                    const collided = SAT.testCirclePolygon(satCircle, satBox, satRes);
+                    if (collided) {
+                        this.x = this.x - satRes.overlapV.x;
+                        this.y = this.y - satRes.overlapV.y;
+                        if (satRes.overlapV.x) {
+                            this.velocity.x *= -1;
+                        }
+
+                        if (satRes.overlapV.y) {
+                            this.velocity.y *= -1;
+                        }
+                    }
+
+                },
+                render: function () {
+                    GAME.stage.beginPath();
+                    GAME.stage.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                    GAME.stage.fillStyle = '#0095DD';
+                    GAME.stage.fill();
+                    GAME.stage.closePath();
+                }
             };
 
-            // setInterval(() => {
-            //     GAME.stage.clearRect(0, 0, GAME.stage.width, GAME.stage.height);
-            //     box.update();
-            //     box.render();
-            // }, 1000/60);
+            const mainLoop = function () {
+                requestAnimationFrame(mainLoop);
+                GAME.stage.clearRect(0, 0, GAME.stage.width, GAME.stage.height);
+                paddle.update();
+                ball.update();
+                paddle.render();
+                ball.render();
+            };
 
             mainLoop();
         }
@@ -106,4 +136,4 @@
 
 
 
-})();
+})(window.SAT);
