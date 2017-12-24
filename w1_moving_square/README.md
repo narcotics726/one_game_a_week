@@ -1,8 +1,12 @@
 # A Moving Box
 
-Let's create a box moving from the left side to the right side repeatly.
+Let's create a box moving from the left side to the right side repeatedly.
 
-## 1. Create a Canvas and draw a box on it
+## 1. 使用 [<canvas>](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas) 绘画
+
+在所有 HTML5 的新增特性中，`<canvas>` 元素也许是被运用最多的其中之一。相对于 DOM 动画有着更好的渲染性能，以及更复杂全面的图形控制。
+
+起步非常简单，作为一个 DOM 元素，`<canvas>` 所需的属性少的可怜：`width`
 
 ```js
 const GAME = {};

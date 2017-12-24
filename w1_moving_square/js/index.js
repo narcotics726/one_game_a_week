@@ -66,7 +66,7 @@
                 render: function () {
                     GAME.stage.beginPath();
                     GAME.stage.rect(this.x, this.y, this.w, this.h);
-                    GAME.stage.fillStyle = "#00bcd4";
+                    GAME.stage.fillStyle = '#00bcd4';
                     GAME.stage.fill();
                     GAME.stage.closePath();
                 }
@@ -90,8 +90,19 @@
                         this.velocity.x *= -1;
                     }
 
-                    if (this.y >= GAME.stage.height - this.r || this.y <= this.r) {
-                        this.y = oldY;
+                    if (this.x > GAME.stage.width - this.r) {
+                        this.x = GAME.stage.width - this.r;
+                        this.velocity.x *= -1;
+                    } else if (this.x < this.r) {
+                        this.x = this.r;
+                        this.velocity.x *= -1;
+                    }
+
+                    if (this.y > GAME.stage.height - this.r) {
+                        this.y = GAME.stage.height - this.r;
+                        this.velocity.y *= -1;
+                    } else if (this.y < this.r) {
+                        this.y = this.r;
                         this.velocity.y *= -1;
                     }
 
