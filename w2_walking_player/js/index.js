@@ -76,7 +76,7 @@
             };
         });
     });
-    
+
 
 
     const player = {
@@ -85,22 +85,34 @@
         w: 0,
         h: 0,
         frame: 'player_idle',
+        lastStatus: 'idle',
         status: 'idle',
+        direction: 1,
         animation: {
             currentFrameIdx: 0,
             animDict: {
                 'idle': { frameOrder: ['player_idle'], duration: [0] },
-                'walk': { frameOrder: ['player_walk1', 'player_stand', 'player_walk2', 'player_stand'], duration: [100, 80, 100, 80] }
+                'walk': { frameOrder: ['player_walk1', 'player_walk2'], duration: [100, 100] },
+                'jump': { frameOrder: ['player_jump'], duration: [200] }
             }
         },
         lastUpdateTS: 0,
         render: function () {
             try {
-                GAME.stage.drawImage(GAME.sprites.player[this.frame], this.x, this.y);
+                this.frame = this.animation.animDict[this.status].frameOrder[this.animation.currentFrameIdx];
+                
+                if (this.direction === 1) {
+                    GAME.stage.drawImage(GAME.sprites.player[this.frame], this.x, this.y);
+                } else {
+                    GAME.stage.save();
+                    GAME.stage.setTransform(-1, 0, 0, 1, 0, 0);
+                    GAME.stage.drawImage(GAME.sprites.player[this.frame], 0 - GAME.sprites.player[this.frame].width - this.x, this.y);
+                    GAME.stage.restore();
+                }
             } catch (e) {
                 console.log(
-                    this.animation.currentFrameIdx, 
-                    this.status, this.animation.animDict[this.status], 
+                    this.animation.currentFrameIdx,
+                    this.status, this.animation.animDict[this.status],
                     this.animation.currentFrameIdx,
                     this.frame
                 );
@@ -111,10 +123,15 @@
             log(`${this.x}, ${this.status}, ${this.frame}`);
             this.lastUpdateTS += delta;
 
-            if (GAME.keyDown['ArrowRight']) {
+            if (GAME.keyDown['Space']) {
+                this.status = 'jump';
+                this.move({ x: this.x + this.direction, y: this.y });
+            } else if (GAME.keyDown['ArrowRight']) {
+                this.direction = 1;
                 this.status = 'walk';
-                this.move({x: this.x + 1, y: this.y});
+                this.move({ x: this.x + 1, y: this.y });
             } else if (GAME.keyDown['ArrowLeft']) {
+                this.direction = -1;
                 this.status = 'walk';
                 this.move({ x: this.x - 1, y: this.y });
             } else {
@@ -122,6 +139,7 @@
                 this.animation.currentFrameIdx = 0;
             }
             this.playAnim();
+            this.lastStatus = this.status;
         },
         move: function (dest) {
             if (dest.x - this.w > GAME.stage.width || dest.x < 0) {
@@ -132,13 +150,12 @@
             }
         },
         playAnim: function () {
-            if (this.lastUpdateTS < this.animation.animDict[this.status].duration[this.animation.currentFrameIdx]) {
+            if (this.lastStatus === this.status && this.lastUpdateTS < this.animation.animDict[this.status].duration[this.animation.currentFrameIdx]) {
                 return;
             } else {
                 this.lastUpdateTS = 0;
             }
 
-            this.frame = this.animation.animDict[this.status].frameOrder[this.animation.currentFrameIdx];
             this.animation.currentFrameIdx += 1;
             if (this.animation.currentFrameIdx >= this.animation.animDict[this.status].frameOrder.length) {
                 this.animation.currentFrameIdx = 0;
@@ -151,7 +168,8 @@
         if (e.target.readyState === 'complete') {
             init().then(() => {
                 document.onkeydown = function (e) {
-                    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.code) > -1) {
+
+                    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].indexOf(e.code) > -1) {
                         GAME.keyDown[e.code] = true;
                     }
                 };
