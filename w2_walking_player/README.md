@@ -1,96 +1,64 @@
-# A Moving Box
+# A Walking Player
 
-Let's create a box moving from the left side to the right side repeatedly.
+Create a charactor which can walk and jump.
 
-## 1. 使用 [`<canvas>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas) 绘画
+> 本示例中的图像资源来自于 [www.kenney.nl](www.kenney.nl)
 
-在所有 HTML5 的新增特性中，`<canvas>` 元素也许是被运用最多的其中之一。相对于 DOM 动画有着更好的渲染性能，以及更复杂全面的图形控制。
+## 1. Animation
 
-起步非常简单，作为一个 DOM 元素，`<canvas>` 的属性少的可怜：`width` 与 `height` 几乎就是你要考虑的全部内容。
+> 动画是指由许多帧静止的画面，以一定的速度（如每秒16张）连续播放时，肉眼因视觉残象产生错觉，而误以为画面活动的作品。
+> [维基百科 - 动画](https://zh.wikipedia.org/wiki/%E5%8A%A8%E7%94%BB)
 
-> 需要注意的一点是：使用 CSS 仍然可以控制 `<canvas>` 元素的尺寸，但画布内部所渲染的所有图像都将被自适应拉伸，所有坐标系仍然以 HTML 属性为基准进行计算。
-
-```js
-const GAME = {};
-const stageDOM = document.createElement('canvas');
-stageDOM.width = 400;
-stageDOM.height = 400;
-document.body.appendChild(stageDOM);
-GAME.stage = stageDOM.getContext('2d');
-```
-
-让我们先画一个矩形来试试手：
+从 w1 的示例中其实我们已经利用了这一点，在每一次 `requestAnimationFrame` 的 callback 中，小球/方块 的位置都被稍作偏移后渲染到画面上，营造出不停移动的视觉效果。一个四处走动的人物形象也并没有什么差别：
 
 ```js
-const drawBox = function () {
-    GAME.stage.beginPath();
-    GAME.stage.rect(0, 0, 50, 50);
-    GAME.stage.fillStyle = "#00bcd4";
-    GAME.stage.fill();
-    GAME.stage.closePath();
+const drawPlayer = function () {
+    GAME.stage.drawImage(playerImg, playerX, playerY);
 };
 ```
 
-## 2. Let the box move over time
+
+不过是把 `rect` 函数替换成了 [`drawImage`](https://developer.mozilla.org/zh-CN/docs/Web/API/CanvasRenderingContext2D/drawImage) 而已。
+
+但这样的效果无疑过于简陋了，我们当然希望画面上的人物在位置变换的同时也能做出相应的动作。亦即，连续循环的播放一组动作图片。（我想你小时候或许玩过“在书页的角落画上不同的火柴人然后快速翻动”这样的游戏？）
+
+来试着实现一下：
 
 ```js
-const drawBox = function (x, y) {
-    //...
-    GAME.stage.rect(x, y, 50, 50);
-    //...
-};
-
-let boxX = 0;
-let boxY = 0;
-setInterval(() => {
-    //clear all from the canvas
-    GAME.stage.clearRect(0, 0, GAME.stage.width, GAME.stage.height);
-    boxX += 1;
-    drawBox(boxX, boxY);
-}, 1000/60);
-```
-## 3. Do some refactoring
-
-```js
-const box = {
+const player = {
     x: 0,
     y: 0,
-    w: 50,
-    h: 50,
-    update: function () { ... },
-    render: function () { ... }
-};
-
-const loop = function () {
-    requestAnimationFrame(loop);
-    GAME.stage.clearRect(0, 0, GAME.stage.width, GAME.stage.height);
-    box.update();
-    box.render();
-};
-```
-
-## 4. Control the box moving
-
-```js
-document.onkeydown = function (e) {
-    if (e.code === 'ArrowDown') {
-        GAME.keydown.ArrowDown = true;
-    }
-};
-
-document.onkeyup = function (e) {
-    if (e.code === 'ArrowDown') {
-        GAME.keydown.ArrowDown = false;
-    }
-};
-
-const box = {
-    ...,
+    currentFrame: 0,
+    frames: ['assets/player_walk1.png', 'assets/player_walk2.png'],
     update: function () {
-        if (GAME.keydown.ArrowDown) {
-            this.y += this.velocity;
+        //handle user input and update player's position
+        //...
+        this.currentFrame += 1;
+        if (this.currentFrame >= this.frames.length) {
+            this.currentFrame = 0;
         }
-        ...
+    },
+    render: function () {
+        GAME.stage.drawImage(this.frames[this.currentFrame], this.x, this.y);
     }
 }
 ```
+
+唔，效果是有了，不过感觉有点蠢，由于游戏非常简单，只要电脑性能不是太差劲，就会看到由于渲染的帧数过高，人物的动作就像是在抽风。
+
+`requestAnimationFrame` 的 callback 实际上接受一个类型为 [`DOMHighResTimeStamp`](https://developer.mozilla.org/zh-CN/docs/Web/API/DOMHighResTimeStamp) 的参数，该参数表示了这次回调函数被触发的时间戳。利用它我们可以方便的计算出每一帧距离上一帧的时间差：
+
+```js
+let lastTS = null;
+const mainLoop = function (ts) {
+    if (lastTS === null) {
+        lastTS = ts;
+    }
+    const delta = ts - lastTS;
+    lastTS = ts;
+    requestAnimationFrame(mainLoop);
+};
+```
+
+
+...
